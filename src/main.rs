@@ -1,8 +1,9 @@
+use anyhow::anyhow;
 use once_cell::sync::Lazy;
 use std::fs;
 use std::path::Path;
 
-static CLIENT: Lazy<reqwest::Client> = Lazy::new(|| reqwest::Client::new());
+static CLIENT: Lazy<reqwest::Client> = Lazy::new(reqwest::Client::new);
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -10,8 +11,7 @@ async fn main() -> anyhow::Result<()> {
 
 	for (local, remote) in files
 		.as_table()
-		// .ok_or_else(|| Err(anyhow!("files.toml format is invalid")))?
-		.unwrap()
+		.ok_or_else(|| anyhow!("files.toml format is invalid"))?
 	{
 		let local_path = Path::new(local);
 		// Assume existing files are up to date
@@ -27,11 +27,15 @@ async fn main() -> anyhow::Result<()> {
 		}
 
 		// Get file
+		let remote = remote
+			.as_str()
+			.ok_or_else(|| anyhow!("expected remote location of {} to be a string", local))?;
 		println!("fetching {}", local);
 		let content = CLIENT
-			.get(remote.as_str().unwrap())
+			.get(remote)
 			.send()
 			.await?
+			.error_for_status()?
 			.bytes()
 			.await?;
 		fs::write(local_path, content)?;
