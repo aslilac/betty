@@ -73,7 +73,6 @@ jobs:
 
       - uses: softprops/action-gh-release@v1
         name: Publish
-        # prerelease: true
         with:
           files: ./build/${{ matrix.release.target }}/release/betty-${{ github.ref_name }}-${{ matrix.release.target }}.*
 
